@@ -6,23 +6,8 @@
 substitutions:
   devicename: "airgradient-one"
   upper_devicename: "AG One"
-  ag_esphome_config_version: 0.2.1
-
-esphome:
-  name: "${devicename}"
-  friendly_name: "${upper_devicename}"
-  name_add_mac_suffix: true  # Set to false if you don't want part of the MAC address in the name
-  <<: !include includes/call_home_on_boot.yaml  # Reports to AirGradient dashboard after Wifi connected for quick validation
-
-esp32:
-  board: esp32-c3-devkitm-1
-
-# Enable logging
-# https://esphome.io/components/logger.html
-logger:
-  baud_rate: 0  # Must disable serial logging as it conflicts with pms5003 uart pins and ESP32-C3 only has 2 hardware UART
-  logs:
-    component: ERROR  # Hiding warning messages about component taking a long time https://github.com/esphome/issues/issues/4717
+  ag_esphome_config_version: 0.2.2
+  add_mac_suffix: "true"  # Must have quotes around value
 
 # Enable Home Assistant API
 api:
@@ -33,72 +18,24 @@ wifi:
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
 
-# The captive portal is a fallback mechanism for when connecting to the configured WiFi fails.
-# https://esphome.io/components/captive_portal.html
-captive_portal:
-
-# web_server:  # Please note that enabling this component will take up a lot of memory and may decrease stability, especially on ESP8266.
-
-http_request:
-  # Used to support POST request to send data to AirGradient
-  # https://esphome.io/components/http_request.html
-
-switch:
-  - <<: !include includes/switch_safe_mode.yaml
-  - <<: !include includes/switch_display_temp.yaml
-  - <<: !include includes/switch_upload_airgradient.yaml
-
-uart:
-  # https://esphome.io/components/uart.html#uart
-  - rx_pin: GPIO0  # Pin 12
-    tx_pin: GPIO1  # Pin 13
-    baud_rate: 9600
-    id: senseair_s8_uart
-
-  - rx_pin: GPIO20  # Pin 30 or RX
-    tx_pin: GPIO21  # Pin 31 or TX
-    baud_rate: 9600
-    id: pms5003_uart
-
-i2c:
-  # https://esphome.io/components/i2c.html
-  sda: GPIO7
-  scl: GPIO6
-  frequency: 400kHz  # 400kHz eliminates warnings about components taking a long time other than SGP40 component: https://github.com/esphome/issues/issues/4717
-
-sensor:
-  - <<: !include includes/sensor_pms5003.yaml
-  - <<: !include includes/sensor_aqi.yaml
-  - <<: !include includes/sensor_s8_led.yaml
-  - <<: !include includes/sensor_sht40.yaml
-  # - <<: !include includes/sensor_sht30.yaml
-  - <<: !include includes/sensor_wifi.yaml
-  - <<: !include includes/sensor_uptime.yaml
-  - <<: !include includes/sensor_sgp41.yaml
-
-<<: !include includes/fonts.yaml
-display:
-  - <<: !include includes/display_sh1106_128_64.yaml
-
-button:
-  - <<: !include includes/button_s8_calibration.yaml
-  - <<: !include includes/button_s8_calibration_enable.yaml
-  - <<: !include includes/button_s8_calibration_disable.yaml
-  - <<: !include includes/button_s8_calibration_interval.yaml
+packages:
+  board: !include packages/airgradient_esp32-c3_board.yaml
+  pm_2.5: !include packages/sensor_pms5003.yaml
+  co2: !include packages/sensor_s8.yaml
+  temp_humidity: !include packages/sensor_sht40.yaml
+  tvoc: !include packages/sensor_sgp41.yaml
+  # display: !include packages/display_sh1106_single_page.yaml
+  display: !include packages/display_sh1106_multi_page.yaml
+  led: !include packages/led.yaml
+  led_co2: !include packages/led_co2.yaml
+  airgradient_api: !include packages/airgradient_api_esp32-c3.yaml
+  hardware_watchdog: !include packages/watchdog.yaml
+  config_button: !include packages/config_button.yaml
+  wifi: !include packages/sensor_wifi.yaml
+  uptime: !include packages/sensor_uptime.yaml
+  safe_mode: !include packages/switch_safe_mode.yaml
 
 binary_sensor:
-  - <<: !include includes/binary_sensor_config_gpio9.yaml
-
-light:
-  - <<: !include includes/light_led.yaml
-
-number:
-  - <<: !include includes/number_brightness.yaml
-
-output:
-  - <<: !include includes/output_watchdog.yaml
-
-interval:
-  - <<: !include includes/interval_watchdog.yaml
-  - <<: !include includes/interval_display_page_change.yaml
-  - <<: !include includes/interval_airgradient_api_post.yaml
+  - id: !extend config_button
+    pin:
+      ignore_strapping_warning: true  # Acknowledging that this is a strapping pin and should not have external pullup/down resistors  https://esphome.io/guides/faq.html#why-am-i-getting-a-warning-about-strapping-pins

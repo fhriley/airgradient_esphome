@@ -1,24 +1,12 @@
 ---
-# Reference for substitutions: https://github.com/ajfriesen/ESPHome-AirGradient/blob/main/air-gradient-pro-diy.yaml
+# AirGradient Basic
+# https://www.airgradient.com/open-airgradient/instructions/overview/
+
 substitutions:
   devicename: "ag-basic"
   upper_devicename: "AG Basic"
-  ag_esphome_config_version: 0.1.1
-
-  # Instructions: https://esphome.io/guides/getting_started_hassio.html
-esphome:
-  name: "${devicename}"
-  friendly_name: "${upper_devicename}"
-  name_add_mac_suffix: true  # Set to false if you don't want part of the MAC address in the name
-
-esp8266:
-  board: d1_mini
-
-# Enable logging
-# https://esphome.io/components/logger.html
-logger:
-  logs:
-    component: ERROR  # Hiding warning messages about component taking a long time https://github.com/esphome/issues/issues/4717
+  ag_esphome_config_version: 0.1.2
+  add_mac_suffix: "true"  # Must have quotes around value
 
 # Enable Home Assistant API
 api:
@@ -29,67 +17,13 @@ wifi:
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
 
-# The captive portal is a fallback mechanism for when connecting to the configured WiFi fails.
-# https://esphome.io/components/captive_portal.html
-captive_portal:
-
-
-http_request:
-  # Used to support POST request to send data to AirGradient
-  # https://esphome.io/components/http_request.html
-
-switch:
-  - <<: !include includes/switch_safe_mode.yaml
-  - <<: !include includes/switch_display_temp.yaml
-  - <<: !include includes/switch_upload_airgradient.yaml
-
-# https://www.esphome-devices.com/devices/AirGradient-DIY/
-
-uart:
-  # https://esphome.io/components/uart.html#uart
-  - rx_pin: D4
-    tx_pin: D3
-    baud_rate: 9600
-    id: senseair_s8_uart
-
-  - rx_pin: D5
-    tx_pin: D6
-    baud_rate: 9600
-    id: pms5003_uart
-
-i2c:
-  # https://esphome.io/components/i2c.html
-  sda: D2
-  scl: D1
-  frequency: 400kHz  # 400kHz eliminates warnings about components taking a long time other than SGP40 component: https://github.com/esphome/issues/issues/4717
-
-sensor:
-  - <<: !include includes/sensor_pms5003.yaml
-  - <<: !include includes/sensor_aqi.yaml
-  - <<: !include includes/sensor_s8.yaml
-  # - <<: !include includes/sensor_sht40.yaml
-  - <<: !include includes/sensor_sht30.yaml
-  - <<: !include includes/sensor_wifi.yaml
-  - <<: !include includes/sensor_uptime.yaml
-
-# <<: !include includes/fonts.yaml
-font:
-    # Font to use on the display
-    # Open Source font Liberation Sans by Red Hat
-    # https://www.dafont.com/liberation-sans.font
-  - file: './fonts/liberation_sans/LiberationSans-Regular.ttf'
-    id: font1
-    size: 24
-
-display:
-  - <<: !include includes/display_ssd1306_64_48.yaml
-
-button:
-  - <<: !include includes/button_s8_calibration.yaml
-  - <<: !include includes/button_s8_calibration_enable.yaml
-  - <<: !include includes/button_s8_calibration_disable.yaml
-  - <<: !include includes/button_s8_calibration_interval.yaml
-
-interval:
-  - <<: !include includes/interval_display_page_change.yaml
-  - <<: !include includes/interval_airgradient_api_post_8266_no_sgp41.yaml
+packages:
+  board: !include packages/airgradient_d1_mini_board.yaml
+  pm_2.5: !include packages/sensor_pms5003.yaml
+  co2: !include packages/sensor_s8.yaml
+  temp_humidity: !include packages/sensor_sht30.yaml
+  display: !include packages/display_ssd1306.yaml
+  airgradient_api: !include packages/airgradient_api_d1_mini_no_sgp41.yaml
+  wifi: !include packages/sensor_wifi.yaml
+  uptime: !include packages/sensor_uptime.yaml
+  safe_mode: !include packages/switch_safe_mode.yaml
